@@ -55,41 +55,61 @@ VALUES
     ('Company II', 'Telecommunications', 110.5, 2000, 1, 21, 12, 4.9),
     ('Company JJ', 'Manufacturing', 370.0, 3100, 1, 20, 12, 7.6),
     ('Company KK', 'Healthcare', 150.2, 3400, 0, 16, 8, 5.3);
+Analysis:
 
--- Group the data in a new way using a CASE statement:
+--Find the average number of paid time off days, maternity leave weeks, and average employee tenure for each industry to understand which industry generally offers better employee benefits.
 SELECT 
-    product_name,
-    interest_rate,
-    CASE 
-        WHEN interest_rate < 1 THEN 'Low Rate'
-        WHEN interest_rate BETWEEN 1 AND 5 THEN 'Medium Rate'
-        ELSE 'High Rate'
-    END AS rate_category
-FROM bank_products;
+    industry,
+    AVG(paid_time_off_days) AS avg_paid_time_off_days,
+    AVG(maternity_leave_weeks) AS avg_maternity_leave_weeks,
+    AVG(avg_employee_tenure) AS avg_employee_tenure
+FROM 
+    fortune_companies
+GROUP BY 
+    industry
+ORDER BY 
+    avg_paid_time_off_days DESC;
 
+-- Assign all the companies in the Healthcare industry as "mother friendly workplace", "acceptable", or "abysmal" based on the maternity leave offered. 
+SELECT company_name,
+CASE WHEN maternity_leave_weeks >= 10 THEN 'mother friendly workplace'
+WHEN maternity_leave_weeks >= 8 THEN 'acceptable'
+ELSE 'abysmal'
+END as 'mother_friendliness'
+FROM fortune_companies
+WHERE industry='Healthcare'
+;
 
---Use a HAVING clause to determine something interesting per category:
+--Which industries have an average revenue of at least $250 Billion, and what are their avg revenues?
+SELECT industry 
+,ROUND(AVG(revenue),1) as avg_revenue_billions
+FROM fortune_companies
+GROUP BY industry
+HAVING avg_revenue_billions>=250
+;
+
+--Which companies have healthcare benefits *and* at least 20 paid time off days?
+SELECT company_name
+FROM fortune_companies
+WHERE  paid_time_off_days >20
+AND  healthcare_benefits 
+;
+
+--Which company in the Retail industry has the least revenue, and what's their revenue? 
+SELECT company_name, min(revenue)
+FROM fortune_companies
+WHERE industry='Retail'
+;
+--Compare the sum of revenue and total number of employees for each industry to assess overall industry size and workforce distribution.
 SELECT 
-    product_type,
-    AVG(interest_rate) AS avg_interest_rate
-FROM bank_products
-GROUP BY product_type
-HAVING AVG(interest_rate) > 5;
---Use logical operators like AND or OR to filter the data:
-SELECT 
-    product_name,
-    interest_rate,
-    monthly_fee,
-    minimum_balance
-FROM bank_products
-WHERE minimum_balance > 1000
-  AND (interest_rate > 10 OR monthly_fee = 0);
---Use an aggregate function to return summary statistics:
-SELECT 
-    product_type,
-    COUNT(*) AS product_count,
-    SUM(monthly_fee) AS total_monthly_fees,
-    AVG(monthly_fee) AS avg_monthly_fee
-FROM bank_products
-GROUP BY product_type;
+    industry,
+    SUM(revenue) AS total_revenue,
+    SUM(employees) AS total_employees,
+    AVG(avg_employee_tenure) AS avg_tenure
+FROM 
+    fortune_companies
+GROUP BY 
+    industry
+ORDER BY 
+    total_revenue DESC;
 
